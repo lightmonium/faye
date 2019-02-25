@@ -77,15 +77,18 @@ var Dispatcher = Class({ className: 'Dispatcher',
   },
 
   selectTransport: function(transportTypes) {
-    Transport.get(this, transportTypes, this._disabled, function(transport) {
-      this.debug('Selected ? transport for ?', transport.connectionType, URI.stringify(transport.endpoint));
+    return new Promise((resolve) => {
+      Transport.get(this, transportTypes, this._disabled, function(transport) {
+        this.debug('Selected ? transport for ?', transport.connectionType, URI.stringify(transport.endpoint));
 
-      if (transport === this._transport) return;
-      if (this._transport) this._transport.close();
+        if (transport === this._transport) return;
+        if (this._transport) this._transport.close();
 
-      this._transport = transport;
-      this.connectionType = transport.connectionType;
-    }, this);
+        this._transport = transport;
+        this.connectionType = transport.connectionType;
+        resolve();
+      }, this);
+    });
   },
 
   sendMessage: function(message, timeout, options) {

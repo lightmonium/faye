@@ -103,32 +103,32 @@ var Client = Class({ className: 'Client',
     var self = this;
 
     this.info('Initiating handshake with ?', URI.stringify(this._dispatcher.endpoint));
-    this._dispatcher.selectTransport(constants.MANDATORY_CONNECTION_TYPES);
+    this._dispatcher.selectTransport(constants.CONNECTION_TYPES).then(() => {
+      this._sendMessage({
+        channel:                  Channel.HANDSHAKE,
+        version:                  constants.BAYEUX_VERSION,
+        supportedConnectionTypes: this._dispatcher.getConnectionTypes()
 
-    this._sendMessage({
-      channel:                  Channel.HANDSHAKE,
-      version:                  constants.BAYEUX_VERSION,
-      supportedConnectionTypes: this._dispatcher.getConnectionTypes()
+      }, {}, function(response) {
 
-    }, {}, function(response) {
+        if (response.successful) {
+          this._state = this.CONNECTED;
+          this._dispatcher.clientId  = response.clientId;
 
-      if (response.successful) {
-        this._state = this.CONNECTED;
-        this._dispatcher.clientId  = response.clientId;
+          this._dispatcher.selectTransport(response.supportedConnectionTypes);
 
-        this._dispatcher.selectTransport(response.supportedConnectionTypes);
+          this.info('Handshake successful: ?', this._dispatcher.clientId);
 
-        this.info('Handshake successful: ?', this._dispatcher.clientId);
+          this.subscribe(this._channels.getKeys(), true);
+          if (callback) asap(function() { callback.call(context) });
 
-        this.subscribe(this._channels.getKeys(), true);
-        if (callback) asap(function() { callback.call(context) });
-
-      } else {
-        this.info('Handshake unsuccessful');
-        global.setTimeout(function() { self.handshake(callback, context) }, this._dispatcher.retry * 1000);
-        this._state = this.UNCONNECTED;
-      }
-    }, this);
+        } else {
+          this.info('Handshake unsuccessful');
+          global.setTimeout(function() { self.handshake(callback, context) }, this._dispatcher.retry * 1000);
+          this._state = this.UNCONNECTED;
+        }
+      }, this);
+    });
   },
 
   // Request                              Response
