@@ -306,7 +306,7 @@ var Client = Class({ className: 'Client',
 
       }, options, function(response) {
         if (response.successful)
-          publication.setDeferredStatus('succeeded');
+          publication.setDeferredStatus('succeeded', response);
         else
           publication.setDeferredStatus('failed', Error.parse(response.error));
       }, this);
